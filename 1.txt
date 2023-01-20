@@ -1,0 +1,154 @@
+CreateThread(function()
+    while true do
+        Wait(5)
+        local hours = GetClockHours()
+        if hours >= Config.Open or hours < Config.Close then
+                RequestModel(GetHashKey(Config.Model))
+                while not HasModelLoaded(GetHashKey(Config.Model)) do
+                    Wait(0)
+                end
+
+                if not DoesEntityExist(testped) then
+
+                    local pickaspotbro = math.random(#Config.Locations)
+                
+                    testped = CreatePed(0, GetHashKey(Config.Model) , Config.Locations[pickaspotbro].x, Config.Locations[pickaspotbro].y, Config.Locations[pickaspotbro].z, Config.Locations[pickaspotbro].w, false, false)
+
+                    SetEntityAsMissionEntity(testped)
+                    SetPedFleeAttributes(testped, 0, 0)
+                    SetBlockingOfNonTemporaryEvents(testped, true)
+                    SetEntityInvincible(testped, true)
+                    FreezeEntityPosition(testped, true)
+                    TaskStartScenarioInPlace(testped, "WORLD_HUMAN_TOURIST_MOBILE", 0, true)
+
+                    exports['qb-target']:AddTargetEntity(testped, {
+                        options = {
+                            { 
+                                icon = "fa-solid fa-comments",
+                                label = "تحدث مع البوت",
+                                action = function(entity)
+                                    TriggerEvent('animations:client:EmoteCommandStart', {"think4"})
+                                    QBCore.Functions.Progressbar("negotiate", "tttttst", 7500, false, false, {
+                                        disableMovement = true,
+                                        disableCarMovement = true,
+                                        disableMouse = false,
+                                        disableCombat = true,
+                                    }, {}, {}, {}, function()
+                                        ClearPedTasks(PlayerPedId())
+
+                                            exports['qb-menu']:openMenu({
+                                                {
+                                                    header = "استاجر مركبة",
+                                                    isMenuHeader = true
+                                                },
+                                                {
+                                                    header = "View Products",
+                                                    icon = "fa-solid fa-box-open",
+                                                    params = {
+                                                        event = 'qb-test:openshop',
+                                                    }
+                                                },
+                                                {
+                                                    header = "Close menu",
+                                                    txt = "",
+                                                    icon = "fa-solid fa-angle-left",
+                                                    params = {
+                                                        event = 'qb-menu:closeMenu'
+                                                    }
+                                                },
+                                            })
+                                    end)
+                                end,
+                            },
+                        },
+                        distance = 2.5,
+                    })
+                end
+        else
+            DeletePPed()
+        end
+    end
+end)
+---
+AddEventHandler('onResourceStart', function(resourceName)
+    if GetCurrentResourceName() == resourceName then
+        PlayerJob = QBCore.Functions.GetPlayerData().job
+        LocateGuy()
+    end
+end)
+
+AddEventHandler('QBCore:Client:OnPlayerLoaded', function()
+    PlayerJob = QBCore.Functions.GetPlayerData().job
+    LocateGuy()
+end)
+--
+local function LoadModel(hash)
+    RequestModel(hash)
+    while not HasModelLoaded(hash) do
+        Wait(1)
+    end
+end
+--
+function LocateGuy()
+    exports['qb-target']:AddBoxZone("locateguy", vector3(-46.31, -1112.45, 26.44), 1.0, 1.0, {
+        name="locateguy",
+        heading=30,
+        --debugPoly=true,
+        minZ=43.82,
+        maxZ=44.62,
+    }, {
+        options = {
+            {
+                event = "qb-test:client:test",
+                icon = "fa-solid fa-location-dot",
+                label = "Track Dealer",
+            },
+        },
+        distance = 2.5
+    })
+end
+---
+RegisterNetEvent("qb-test:openshop", function()
+	TriggerServerEvent("inventory:server:OpenInventory", "shop", "illegalshit", Config.Shop)
+end)
+
+function DeletePPed()
+    if DoesEntityExist(testped) then
+        DeletePed(testped)
+    end
+end
+---
+AddEventHandler('onResourceStop', function(resourceName) 
+	if GetCurrentResourceName() == resourceName then
+        DeletePPed()
+        exports['qb-target']:RemoveZone("locateguy")
+	end 
+end)
+--
+Config = {}
+
+Config.Locations = {        -- Locations of where the ped spawns. Chosen randomly every night at 22:00. Add as many as you like.
+    [1] = vector4(-38.84, -1114.4, 25.44, 61.42),
+    [2] = vector4(-45.74, -1108.07, 25.44, 229.19),
+   -- [3] = vector4(1862.15, 3856.72, 35.27, 338.39),
+  --  [4] = vector4(-406.47, -1682.39, 18.19, 145.91),
+}--
+Config.Shop ={
+label = "test",
+slots = 10,
+items = {
+    [1] = {
+        name = "id_card",
+        price = 20,
+        amount = 5,
+        info = {},
+        type = "item",
+        slot = 1,
+    },  
+}
+}
+
+Config.Model = 'cs_joeminuteman'
+
+Config.Open = 23
+Config.Close = 4
